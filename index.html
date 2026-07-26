@@ -636,8 +636,8 @@ const SYSTEM_PROMPT = `# 你是谁
 // ── Provider Config ──────────────────────────
 const PROVIDERS = {
   deepseek: {
-    name: 'DeepSeek', endpoint: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-chat',
-    buildBody: (dream) => ({ model: 'deepseek-chat', max_tokens: 2000, messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: '以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n' + dream }] }),
+    name: 'DeepSeek', endpoint: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-v4-pro',
+    buildBody: (dream) => ({ model: 'deepseek-v4-pro', max_tokens: 2000, messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: '以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n' + dream }] }),
     type: 'openai'
   },
   anthropic: {
