@@ -404,13 +404,19 @@
       <div class="field">
         <label for="provider">API 提供商</label>
         <select id="provider">
-          <option value="anthropic">Anthropic (Claude)</option>
-          <option value="openai">OpenAI (ChatGPT)</option>
+          <option value="deepseek">🔮 DeepSeek</option>
+          <option value="anthropic">🧬 Anthropic (Claude)</option>
+          <option value="openai">🤖 OpenAI (ChatGPT)</option>
+          <option value="gemini">🌐 Google Gemini</option>
+          <option value="grok">🚀 xAI Grok</option>
+          <option value="qwen">☁️ 通义千问 (Qwen)</option>
+          <option value="glm">📚 智谱 GLM</option>
+          <option value="moonshot">🌙 Moonshot (Kimi)</option>
         </select>
       </div>
       <div class="field" style="flex: 3;">
         <label for="apiKey">API Key</label>
-        <input type="password" id="apiKey" placeholder="sk-ant-... 或 sk-...（仅存储在本地浏览器中）">
+        <input type="password" id="apiKey" placeholder="输入对应提供商的 API Key（仅存储在本地浏览器）">
       </div>
     </div>
 
@@ -442,7 +448,7 @@
   <div class="modal">
     <h3>📋 完整的 System Prompt</h3>
     <p style="color: var(--text-dim); font-size: 13px; margin-bottom: 12px;">
-      将以下内容设为 ChatGPT / Claude 的 System Prompt（自定义指令），然后在用户消息中输入梦境描述。
+      将以下内容设为模型的 System Prompt（自定义指令），然后在用户消息中输入梦境描述。
     </p>
     <pre id="promptContent"></pre>
     <div class="btn-row">
@@ -627,27 +633,62 @@ const SYSTEM_PROMPT = `# 你是谁
 5. **文化尊重**：对于来自不同文化背景的梦象，保持尊重和开放。
 6. **隐私保护**：不在解读中追问用户的真实身份信息。`;
 
+// ── Provider Config ──────────────────────────
+const PROVIDERS = {
+  deepseek: {
+    name: 'DeepSeek', endpoint: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-chat',
+    buildBody: (dream) => ({ model: 'deepseek-chat', max_tokens: 2000, messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: '以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n' + dream }] }),
+    type: 'openai'
+  },
+  anthropic: {
+    name: 'Anthropic', endpoint: 'https://api.anthropic.com/v1/messages', model: 'claude-sonnet-4-20250514',
+    extraHeaders: (key) => ({ 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }),
+    buildBody: (dream) => ({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: '以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n' + dream }] }),
+    parseResponse: (data) => data.content[0].text, type: 'anthropic'
+  },
+  openai: {
+    name: 'OpenAI', endpoint: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o',
+    buildBody: (dream) => ({ model: 'gpt-4o', max_tokens: 2000, messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: '以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n' + dream }] }),
+    type: 'openai'
+  },
+  gemini: {
+    name: 'Google Gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', model: 'gemini-2.0-flash',
+    buildUrl: (key) => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + key,
+    buildBody: (dream) => ({ system_instruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents: [{ role: 'user', parts: [{ text: '以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n' + dream }] }] }),
+    parseResponse: (data) => data.candidates[0].content.parts[0].text, type: 'gemini'
+  },
+  grok: {
+    name: 'xAI Grok', endpoint: 'https://api.x.ai/v1/chat/completions', model: 'grok-2',
+    buildBody: (dream) => ({ model: 'grok-2', max_tokens: 2000, messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: '以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n' + dream }] }),
+    type: 'openai'
+  },
+  qwen: {
+    name: '通义千问', endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model: 'qwen-plus',
+    buildBody: (dream) => ({ model: 'qwen-plus', max_tokens: 2000, messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: '以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n' + dream }] }),
+    type: 'openai'
+  },
+  glm: {
+    name: '智谱 GLM', endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash',
+    buildBody: (dream) => ({ model: 'glm-4-flash', max_tokens: 2000, messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: '以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n' + dream }] }),
+    type: 'openai'
+  },
+  moonshot: {
+    name: 'Moonshot', endpoint: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-8k',
+    buildBody: (dream) => ({ model: 'moonshot-v1-8k', max_tokens: 2000, messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: '以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n' + dream }] }),
+    type: 'openai'
+  }
+};
+
 // ── API call ────────────────────────────────────
 async function interpretDream() {
   const dream = document.getElementById('dream').value.trim();
   const provider = document.getElementById('provider').value;
   const apiKey = document.getElementById('apiKey').value.trim();
 
-  // Validation
-  if (!dream) {
-    showError('请先写下你的梦境描述。');
-    return;
-  }
-  if (dream.length < 20) {
-    showError('梦境描述太短了——细节越多，共振越清晰。至少写 20 个字吧。');
-    return;
-  }
-  if (!apiKey) {
-    showError('请输入 API Key（仅存储在浏览器中，不会上传到任何服务器）。');
-    return;
-  }
+  if (!dream) { showError('请先写下你的梦境描述。'); return; }
+  if (dream.length < 20) { showError('梦境描述太短了——细节越多，共振越清晰。至少写 20 个字吧。'); return; }
+  if (!apiKey) { showError('请输入 API Key（仅存储在浏览器中，不会上传到任何服务器）。'); return; }
 
-  // UI state
   hideError();
   document.getElementById('output').classList.remove('show');
   document.getElementById('output').innerHTML = '';
@@ -655,12 +696,24 @@ async function interpretDream() {
   document.getElementById('btnInterpret').disabled = true;
 
   try {
+    const cfg = PROVIDERS[provider];
+    if (!cfg) throw new Error('未知提供商: ' + provider);
+
     let text;
-    if (provider === 'anthropic') {
-      text = await callAnthropic(apiKey, dream);
+    if (cfg.type === 'anthropic') {
+      const resp = await fetch(cfg.endpoint, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, cfg.extraHeaders(apiKey)), body: JSON.stringify(cfg.buildBody(dream)) });
+      if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.error?.message || cfg.name + ' 错误 (' + resp.status + ')'); }
+      text = cfg.parseResponse(await resp.json());
+    } else if (cfg.type === 'gemini') {
+      const resp = await fetch(cfg.buildUrl(apiKey), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cfg.buildBody(dream)) });
+      if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.error?.message || cfg.name + ' 错误 (' + resp.status + ')'); }
+      text = cfg.parseResponse(await resp.json());
     } else {
-      text = await callOpenAI(apiKey, dream);
+      const resp = await fetch(cfg.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey }, body: JSON.stringify(cfg.buildBody(dream)) });
+      if (!resp.ok) { const err = await resp.json().catch(() => ({})); throw new Error(err.error?.message || err.msg || cfg.name + ' 错误 (' + resp.status + ')'); }
+      text = (await resp.json()).choices[0].message.content;
     }
+
     renderOutput(text);
   } catch (e) {
     showError(e.message || '未知错误，请检查 API Key 和网络连接。');
@@ -670,75 +723,15 @@ async function interpretDream() {
   }
 }
 
-async function callAnthropic(apiKey, dream) {
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
-      system: SYSTEM_PROMPT,
-      messages: [
-        { role: 'user', content: `以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n${dream}` }
-      ]
-    })
-  });
-
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error?.message || `API 错误 (${resp.status})`);
-  }
-
-  const data = await resp.json();
-  return data.content[0].text;
-}
-
-async function callOpenAI(apiKey, dream) {
-  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      max_tokens: 2000,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n${dream}` }
-      ]
-    })
-  });
-
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error?.message || `API 错误 (${resp.status})`);
-  }
-
-  const data = await resp.json();
-  return data.choices[0].message.content;
-}
-
 // ── Render ──────────────────────────────────────
 function renderOutput(text) {
   const container = document.getElementById('output');
 
-  // Parse sections by ①-⑥ markers or ## markers
   const sections = parseSections(text);
 
   let html = '';
   for (const sec of sections) {
-    html += `
-      <div class="dream-section">
-        <div class="section-num">${sec.label}</div>
-        <div class="section-title">${sec.title}</div>
-        <div class="section-body">${formatBody(sec.body)}</div>
-      </div>`;
+    html += '<div class="dream-section"><div class="section-num">' + sec.label + '</div><div class="section-title">' + sec.title + '</div><div class="section-body">' + formatBody(sec.body) + '</div></div>';
   }
 
   container.innerHTML = html;
@@ -757,7 +750,6 @@ function parseSections(text) {
     { regex: /⑥\s*共振指数/, label: 'SECTION 6', title: '共振指数' },
   ];
 
-  // Also try ## markers
   const altMarkers = [
     { regex: /##\s*①\s*梦境回响/, label: 'SECTION 1', title: '梦境回响' },
     { regex: /##\s*②\s*符号捕捉/, label: 'SECTION 2', title: '符号捕捉' },
@@ -775,7 +767,6 @@ function parseSections(text) {
     }
   }
 
-  // Fallback: try alt markers
   if (positions.length === 0) {
     for (const m of altMarkers) {
       const match = text.match(m.regex);
@@ -785,7 +776,6 @@ function parseSections(text) {
     }
   }
 
-  // If still no markers found, return whole text
   if (positions.length === 0) {
     return [{ label: '', title: '', body: text }];
   }
@@ -796,7 +786,6 @@ function parseSections(text) {
     const start = positions[i].index;
     const end = i + 1 < positions.length ? positions[i + 1].index : text.length;
     let body = text.slice(start, end);
-    // Remove the heading line
     body = body.replace(/^.*?\n/, '').trim();
     sections.push({
       label: positions[i].label,
@@ -809,23 +798,19 @@ function parseSections(text) {
 }
 
 function formatBody(body) {
-  // Escape HTML
   let html = body
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  // Code blocks -> stats box
   html = html.replace(/```([\s\S]*?)```/g, (_, content) => {
-    return `<div class="stats-box">${content.replace(/\n/g, '<br>')}</div>`;
+    return '<div class="stats-box">' + content.replace(/\n/g, '<br>') + '</div>';
   });
 
-  // Bold
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 
-  // Line breaks to paragraphs
   const paras = html.split('\n\n');
-  return paras.filter(p => p.trim()).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+  return paras.filter(p => p.trim()).map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>').join('');
 }
 
 // ── Helpers ─────────────────────────────────────
@@ -856,7 +841,6 @@ function copyFullPrompt() {
     btn.textContent = '✅ 已复制！';
     setTimeout(() => { btn.textContent = orig; }, 1500);
   }).catch(() => {
-    // Fallback
     const pre = document.getElementById('promptContent');
     const range = document.createRange();
     range.selectNode(pre);
@@ -877,23 +861,33 @@ document.getElementById('dream').addEventListener('keydown', function(e) {
   }
 });
 
-// Save API key to localStorage
+// Save API key per provider to localStorage
 document.getElementById('apiKey').addEventListener('change', function() {
   try {
-    localStorage.setItem('dreamreader_api_key', this.value);
-    localStorage.setItem('dreamreader_provider', document.getElementById('provider').value);
+    const provider = document.getElementById('provider').value;
+    localStorage.setItem('dreamreader_key_' + provider, this.value);
+    localStorage.setItem('dreamreader_provider', provider);
   } catch(e) {}
 });
 
 // Load saved
 (function() {
   try {
-    const savedKey = localStorage.getItem('dreamreader_api_key');
     const savedProv = localStorage.getItem('dreamreader_provider');
-    if (savedKey) document.getElementById('apiKey').value = savedKey;
     if (savedProv) document.getElementById('provider').value = savedProv;
+    const provider = document.getElementById('provider').value;
+    const savedKey = localStorage.getItem('dreamreader_key_' + provider);
+    if (savedKey) document.getElementById('apiKey').value = savedKey;
   } catch(e) {}
 })();
+
+// Switch saved key when provider changes
+document.getElementById('provider').addEventListener('change', function() {
+  try {
+    const savedKey = localStorage.getItem('dreamreader_key_' + this.value);
+    document.getElementById('apiKey').value = savedKey || '';
+  } catch(e) {}
+});
 </script>
 </body>
 </html>
