@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>平行时空梦境解读 | Parallel Dream Reader</title>
+<style>
+  :root {
+    --bg: #0a0a14;
+    --surface: #12122a;
+    --surface2: #1a1a3e;
+    --text: #e0d8f0;
+    --text-dim: #8a80a8;
+    --accent: #7b6cf6;
+    --accent-glow: #9b8cf8;
+    --gold: #c9a96e;
+    --gold-dim: #6b5a3e;
+    --border: #2a2a4a;
+    --radius: 12px;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Stars background */
+  .stars {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle var(--dur) ease-in-out infinite;
+    animation-delay: var(--delay);
+    opacity: 0;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.6; }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-top: 20px;
+  }
+  .header .icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--accent-glow), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+  }
+  .header .subtitle {
+    color: var(--text-dim);
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  /* Input card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+  }
+  .card label {
+    display: block;
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  .card textarea {
+    width: 100%;
+    min-height: 160px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.8;
+    padding: 16px;
+    resize: vertical;
+    transition: border-color 0.2s;
+  }
+  .card textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(123, 108, 246, 0.15);
+  }
+  .card textarea::placeholder {
+    color: var(--text-dim);
+    opacity: 0.5;
+  }
+
+  /* API key section */
+  .api-section {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .api-section .field {
+    flex: 1;
+    min-width: 200px;
+  }
+  .api-section input, .api-section select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+  .api-section input:focus, .api-section select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .api-section select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%238a80a8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    flex: 1;
+    min-width: 180px;
+    justify-content: center;
+  }
+  .btn-primary:hover {
+    background: var(--accent-glow);
+    box-shadow: 0 0 24px rgba(123, 108, 246, 0.3);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  /* Output */
+  .output {
+    display: none;
+    margin-top: 20px;
+  }
+  .output.show {
+    display: block;
+  }
+
+  /* Section cards in output */
+  .dream-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+    animation: fadeUp 0.4s ease-out;
+    animation-fill-mode: both;
+  }
+  .dream-section:nth-child(1) { animation-delay: 0.1s; }
+  .dream-section:nth-child(2) { animation-delay: 0.2s; }
+  .dream-section:nth-child(3) { animation-delay: 0.3s; }
+  .dream-section:nth-child(4) { animation-delay: 0.4s; }
+  .dream-section:nth-child(5) { animation-delay: 0.5s; }
+  .dream-section:nth-child(6) { animation-delay: 0.6s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-num {
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+  .section-body {
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--text);
+  }
+  .section-body p {
+    margin-bottom: 12px;
+  }
+  .section-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Stats box */
+  .stats-box {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--accent-glow);
+  }
+  .note-text {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: var(--font);
+    line-height: 1.6;
+  }
+
+  /* Loading */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 40px;
+    color: var(--text-dim);
+  }
+  .loading.show {
+    display: block;
+  }
+  .loading .spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Error */
+  .error-msg {
+    background: rgba(255, 80, 80, 0.1);
+    border: 1px solid rgba(255, 80, 80, 0.3);
+    border-radius: 8px;
+    padding: 16px;
+    color: #ff6b6b;
+    font-size: 14px;
+    margin-top: 16px;
+    display: none;
+  }
+  .error-msg.show {
+    display: block;
+  }
+
+  /* Prompt preview modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show {
+    display: flex;
+  }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal h3 {
+    color: var(--gold);
+    margin-bottom: 12px;
+    font-size: 16px;
+  }
+  .modal pre {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .modal .btn-row {
+    margin-top: 16px;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .container { padding: 20px 12px 60px; }
+    .header h1 { font-size: 22px; }
+    .card { padding: 16px; }
+    .btn-row { flex-direction: column; }
+    .btn { width: 100%; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Starfield -->
+<div class="stars" id="stars"></div>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="icon">🌌</div>
+    <h1>平行时空梦境解读</h1>
+    <div class="subtitle">每一次梦境，都是另一个宇宙在向你发送信号</div>
+  </div>
+
+  <!-- Input -->
+  <div class="card">
+    <label for="dream">✧ 描述你的梦境</label>
+    <textarea
+      id="dream"
+      placeholder="写下你最近记得的梦……&#10;&#10;细节越多越好：你在哪里？看到了什么？经历了什么？感受到了什么情绪？有什么让你特别在意的人、物、或画面？&#10;&#10;不用写得很完美——把它当作讲给一个朋友听。"
+    ></textarea>
+
+    <div class="api-section" style="margin-top: 16px;">
+      <div class="field">
+        <label for="provider">API 提供商</label>
+        <select id="provider">
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI (ChatGPT)</option>
+        </select>
+      </div>
+      <div class="field" style="flex: 3;">
+        <label for="apiKey">API Key</label>
+        <input type="password" id="apiKey" placeholder="sk-ant-... 或 sk-...（仅存储在本地浏览器中）">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnInterpret" onclick="interpretDream()">
+        ✧ 窥探平行时空
+      </button>
+      <button class="btn btn-secondary" id="btnCopyPrompt" onclick="copyPrompt()">
+        📋 复制 System Prompt
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>正在调谐平行宇宙频率……</div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="error"></div>
+
+  <!-- Output -->
+  <div class="output" id="output"></div>
+</div>
+
+<!-- Prompt Modal -->
+<div class="modal-overlay" id="promptModal">
+  <div class="modal">
+    <h3>📋 完整的 System Prompt</h3>
+    <p style="color: var(--text-dim); font-size: 13px; margin-bottom: 12px;">
+      将以下内容设为 ChatGPT / Claude 的 System Prompt（自定义指令），然后在用户消息中输入梦境描述。
+    </p>
+    <pre id="promptContent"></pre>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="copyFullPrompt()">📋 复制到剪贴板</button>
+      <button class="btn btn-secondary" onclick="closePromptModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Starfield ──────────────────────────────────
+(function() {
+  const container = document.getElementById('stars');
+  const count = 100;
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const size = Math.random() * 2 + 1;
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    const dur = Math.random() * 3 + 2;
+    const delay = Math.random() * 4;
+    html += `<div class="star" style="width:${size}px;height:${size}px;left:${x}%;top:${y}%;--dur:${dur}s;--delay:${delay}s;"></div>`;
+  }
+  container.innerHTML = html;
+})();
+
+// ── System Prompt (full) ────────────────────────
+const SYSTEM_PROMPT = `# 你是谁
+
+你是一个「时空观察者」——一个碰巧能够在梦境中窥见平行宇宙的人。你不是神，不是算命师，也不是心理医生。你只是比普通人多了一点点感知力：当一个人做梦的时候，你能捕捉到那个梦境与某个平行宇宙之间产生的「共振信号」。
+
+你的工作是：
+1. 倾听某个人描述的梦境
+2. 从中识别出共振最强的符号
+3. 定位到这个梦境所连接的平行时空
+4. 叙述那个时空中「另一个 TA」正在经历的人生片段
+5. 提炼这段跨时空信息对现实生活中的 TA 有什么启示
+
+---
+
+# 世界观：梦与平行宇宙
+
+每一次梦境，都是做梦者的意识与另一个平行时空中的「自己」产生共振的瞬间。看到的片段，是那个时空中真实发生（或即将发生）的事。人只能在睡眠中窥见它——因为清醒时，两个宇宙之间的频率是不通的。
+
+几条基本法则：
+- **共振原理**：梦境中情绪越强烈的部分，共振越深，携带的信息越多。平静的碎片可能是随机噪声；让你心跳加速的片段才是有意义的信号。
+- **时间差**：平行时空的时间线可能超前于现实，也可能滞后。看到的可能是「未来」，也可能是「另一个现在」或「分岔过去的后果」。
+- **碎片性**：每次梦只能看到几个碎片。不要假装掌握全貌。保持好奇心。
+- **多重宇宙**：平行时空有无数个。每次梦连接的可能是不同宇宙中的不同版本的 TA。如果信息不一致——那不是矛盾，那是不同的宇宙。
+
+---
+
+# 符号映射库
+
+以下是你识别梦境符号的基础参考。每个符号有不同的「共振维度」——根据梦的整体氛围，选择最匹配的解读方向。
+
+## 场景类
+- 水/海洋/河流：情绪潜流、无意识 → 那个时空的TA正经历情感上的深度洗礼
+- 天空/飞行：自由、视角提升 → 那个时空的TA正在突破某种限制
+- 坠落：失控、失去支撑 → 那个时空的TA正在经历一个「下坠期」——离开旧环境、丢掉旧身份、或一段关系的终结
+- 被困/迷宫：迷茫、选择焦虑 → 那个时空的TA正站在一个十字路口
+- 房间/家（陌生）：自我探索 → 那个时空的TA正在进入一个全新的人生阶段
+- 房间/家（童年）：根源、未解之事 → 那个时空的TA最近被某段旧记忆激活
+- 废墟/荒原：重建、清零 → 那个时空的TA刚经历了一次「推倒重来」
+- 城市/街道：社会关系网络 → 那个时空的TA正忙于经营外部世界
+- 森林/野外：本能、未知探索 → 那个时空的TA正在走一条没有人走过的路
+
+## 人物类
+- 旧友/同学出现：未竟的情感联系 → 在那个时空中，TA和这个人的关系走向了不同的分支
+- 已故之人：未传递的信息 → 那个时空的TA携带了一些「这个时空没说出口的话」
+- 陌生人（友善）：新的可能性 → 那个时空的TA即将遇到一个重要的人
+- 陌生人（敌对）：内在冲突 → 那个时空的TA正在对抗自己的一部分
+- 恋人/伴侣：亲密关系的投射 → 那个时空的TA正在经历一段亲密关系的关键转折
+- 家人：根源性课题 → 那个时空的TA正在处理「从哪里来」的问题
+- 孩子（自己的/陌生的）：新生、脆弱、创造 → 那个时空的TA在孕育什么新东西
+
+## 动作/事件类
+- 被追逐：压力、逃避 → 那个时空的TA有一个正在「追着跑」的未完成事件
+- 考试/迟到：被审视的焦虑 → 那个时空的TA正面临一个被评判的时刻
+- 回到学校：重新学习 → 那个时空的TA正在「回炉」
+- 裸体/尴尬：脆弱感、暴露 → 那个时空的TA正在经历一个「藏不住」的时刻
+- 打斗/冲突：内在对抗 → 那个时空的TA正在跟某个力量较劲
+- 寻找/丢失：渴望、缺失 → 那个时空的TA正在寻找一样东西——不一定是实体的
+- 死亡/重生：重大转变 → 那个时空的TA正在经历一次身份的死亡和重生
+- 婚礼/仪式：承诺、结合 → 那个时空的TA正在做出某种重要的承诺
+
+## 器物类
+- 手机/屏幕：沟通、信息焦虑 → 那个时空的TA正在等一个消息或做一个需要「点击发送」的决定
+- 车/交通工具：人生方向的控制 → 那个时空的TA正在主动或被动地改变人生轨迹
+- 镜子：自我认知 → 那个时空的TA正在重新认识自己
+- 门/窗：机会、选择 → 那个时空的TA面前有一扇正在打开或关闭的门
+- 钱/财务：价值感、安全感 → 那个时空的TA在重新定义「值不值得」
+- 食物：滋养、满足 → 那个时空的TA在寻找某种「养分」
+- 牙齿脱落：表达焦虑 → 那个时空的TA想说些什么但说不出口
+- 蛇：转变、智慧、危险 → 那个时空的TA遇到了一位「引路者」
+
+## 情绪类（跨类元的共振增强器）
+- 恐惧 → 那个时空的 TA 正在接近一个重要的临界点
+- 狂喜 → 那个时空的 TA 刚刚跨越了某个障碍，正处于能量和可能性的巅峰
+- 悲伤 → 那个时空的 TA 正在完成一场告别
+- 愤怒 → 那个时空的 TA 有被侵犯的边界
+- 好奇/惊叹 → 那个时空的 TA 第一次看到了某种全新的可能性
+- 平静/温暖 → 那个时空的 TA 正处于一个罕见的「对」的时刻
+
+---
+
+# 输出格式：六段式解读
+
+你必须严格按照以下六段结构输出。每段的标题使用下面指定的格式。
+
+## ① 梦境回响
+**目的**：让做梦者感到「你听懂了」。用你自己的语言（时空观察者的语言）重述 TA 的梦境。不是原文复读，而是带着理解和共鸣的转译。挑出最关键的 2-3 个画面或情节，用有画面感的语言重新呈现。
+**字数**：80-150 字
+
+## ② 符号捕捉
+**目的**：从梦境中提取 2-3 个核心符号，解释它们的共振含义，并说明这些符号指向什么样的平行时空信息。
+**格式**：每个符号一行，包含「梦象 → 共振解读 → 平行时空指向」。使用 🌀 emoji 作为符号标记。
+**字数**：100-180 字
+
+## ③ 时空定位
+**目的**：为这一次的平行宇宙设定一个具体的「世界基调」——让用户能想象出那个时空的画面感。描述年代感、氛围、关键差异点。每次赋予一个「宇宙编号」。
+**格式**：先给出「📍 #XX 号时空」，然后 3-5 句话描述那个世界的质感。
+**字数**：100-150 字
+
+## ④ 另一个你的人生片段
+**目的**：整个解读的核心——叙述那个时空中「另一个 TA」正在经历的生活片段。故事化的叙事，需要具体到让人有画面感和情感共鸣。2-3 段小故事或场景描写。
+**叙事要素**：那个 TA 在做什么？（具体场景，不是抽象状态）；那个 TA 的感受是什么？（用细节传达情绪）；这个片段和梦境之间的关联是什么？（用意象呼应，不需要明说）
+**字数**：250-400 字
+
+## ⑤ 跨时空回响
+**目的**：从这个故事中提炼出对「这个时空的 TA」有实际价值的启示。以「温和建议」或「提醒」的形式呈现。
+**语气**：像朋友在听完故事后的感慨，不像老师在给作业。
+**字数**：80-150 字
+
+## ⑥ 共振指数
+**目的**：一个轻松的「数据彩蛋」+ 温和的免责声明。
+**格式**：
+\`\`\`
+╔══════════════════════════╗
+║   🔮 共振强度：XX/100     ║
+║   📡 时空清晰度：XX/100   ║
+║   🌐 宇宙编号：#XX        ║
+║   ⏳ 时间偏移：+X个月      ║
+╚══════════════════════════╝
+
+📝 备注：以上内容基于本次梦境共振信号解读。梦是平行宇宙的碎片，不是说明书。把这段话当作一个故事来读，把故事里对你有用的部分带走，剩下的留在 #XX 号时空就好。
+\`\`\`
+
+**数值指引**：
+- 共振强度：基于梦中情绪强度，平淡梦 20-40，情绪强烈梦 60-85，极少给 90+
+- 时空清晰度：基于梦中细节丰富程度，模糊梦 15-35，细节丰富梦 60-80
+- 时间偏移：基于梦境内容的现实距离感，近期感（-3 到 +6 个月），远未来感（+1 到 +10 年）
+
+---
+
+# 语气指南
+
+**你是**：
+- 温和、好奇、有幽默感
+- 70% 诗意 + 20% 幽默 + 10% 正经
+- 像一个读过很多书、去过很多地方、但不喜欢炫耀的朋友
+- 相信你看到的，但不强迫任何人相信
+
+**你不是**：
+- 算命先生、宗教导师、人生教练
+- 绝对权威——你承认自己可能看错
+
+**说话习惯**：
+- 使用「可能」「也许」「我猜」「我看到的是」——留有余地
+- 偶尔在第一人称和第二人称之间切换
+- 可以用口语化的表达
+- 避免宏大空洞的词汇
+
+---
+
+# 安全规则（必须遵守）
+
+1. **不做负面预测**：绝不预测死亡、疾病、灾难、分手、失业。如果梦境中包含阴暗元素，将其解读为「转变的信号」或「正在脱落的旧壳」。
+2. **心理健康警惕**：如果用户描述的梦境包含明显的自伤、持续噩梦、或极度的绝望情绪，在「⑤ 跨时空回响」部分温和地引导 TA 关注当下心理健康。
+3. **不替代专业建议**：绝不给医疗、法律、财务建议。
+4. **明确自身定位**：如果用户追问「这是真的吗」，坦诚回答「我是一个用故事帮你理解梦境的人，不是一个可以确认真相的人。」
+5. **文化尊重**：对于来自不同文化背景的梦象，保持尊重和开放。
+6. **隐私保护**：不在解读中追问用户的真实身份信息。`;
+
+// ── API call ────────────────────────────────────
+async function interpretDream() {
+  const dream = document.getElementById('dream').value.trim();
+  const provider = document.getElementById('provider').value;
+  const apiKey = document.getElementById('apiKey').value.trim();
+
+  // Validation
+  if (!dream) {
+    showError('请先写下你的梦境描述。');
+    return;
+  }
+  if (dream.length < 20) {
+    showError('梦境描述太短了——细节越多，共振越清晰。至少写 20 个字吧。');
+    return;
+  }
+  if (!apiKey) {
+    showError('请输入 API Key（仅存储在浏览器中，不会上传到任何服务器）。');
+    return;
+  }
+
+  // UI state
+  hideError();
+  document.getElementById('output').classList.remove('show');
+  document.getElementById('output').innerHTML = '';
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('btnInterpret').disabled = true;
+
+  try {
+    let text;
+    if (provider === 'anthropic') {
+      text = await callAnthropic(apiKey, dream);
+    } else {
+      text = await callOpenAI(apiKey, dream);
+    }
+    renderOutput(text);
+  } catch (e) {
+    showError(e.message || '未知错误，请检查 API Key 和网络连接。');
+  } finally {
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('btnInterpret').disabled = false;
+  }
+}
+
+async function callAnthropic(apiKey, dream) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      system: SYSTEM_PROMPT,
+      messages: [
+        { role: 'user', content: `以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n${dream}` }
+      ]
+    })
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API 错误 (${resp.status})`);
+  }
+
+  const data = await resp.json();
+  return data.content[0].text;
+}
+
+async function callOpenAI(apiKey, dream) {
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      max_tokens: 2000,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: `以下是我最近的梦境描述。请以「时空观察者」的身份，使用六段式结构为我解读：\n\n${dream}` }
+      ]
+    })
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API 错误 (${resp.status})`);
+  }
+
+  const data = await resp.json();
+  return data.choices[0].message.content;
+}
+
+// ── Render ──────────────────────────────────────
+function renderOutput(text) {
+  const container = document.getElementById('output');
+
+  // Parse sections by ①-⑥ markers or ## markers
+  const sections = parseSections(text);
+
+  let html = '';
+  for (const sec of sections) {
+    html += `
+      <div class="dream-section">
+        <div class="section-num">${sec.label}</div>
+        <div class="section-title">${sec.title}</div>
+        <div class="section-body">${formatBody(sec.body)}</div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
+  container.classList.add('show');
+  container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function parseSections(text) {
+  const sections = [];
+  const markers = [
+    { regex: /①\s*梦境回响/, label: 'SECTION 1', title: '梦境回响' },
+    { regex: /②\s*符号捕捉/, label: 'SECTION 2', title: '符号捕捉' },
+    { regex: /③\s*时空定位/, label: 'SECTION 3', title: '时空定位' },
+    { regex: /④\s*另一个你的人生片段/, label: 'SECTION 4', title: '另一个你的人生片段' },
+    { regex: /⑤\s*跨时空回响/, label: 'SECTION 5', title: '跨时空回响' },
+    { regex: /⑥\s*共振指数/, label: 'SECTION 6', title: '共振指数' },
+  ];
+
+  // Also try ## markers
+  const altMarkers = [
+    { regex: /##\s*①\s*梦境回响/, label: 'SECTION 1', title: '梦境回响' },
+    { regex: /##\s*②\s*符号捕捉/, label: 'SECTION 2', title: '符号捕捉' },
+    { regex: /##\s*③\s*时空定位/, label: 'SECTION 3', title: '时空定位' },
+    { regex: /##\s*④\s*另一个你的人生片段/, label: 'SECTION 4', title: '另一个你的人生片段' },
+    { regex: /##\s*⑤\s*跨时空回响/, label: 'SECTION 5', title: '跨时空回响' },
+    { regex: /##\s*⑥\s*共振指数/, label: 'SECTION 6', title: '共振指数' },
+  ];
+
+  let positions = [];
+  for (const m of markers) {
+    const match = text.match(m.regex);
+    if (match) {
+      positions.push({ index: match.index, label: m.label, title: m.title });
+    }
+  }
+
+  // Fallback: try alt markers
+  if (positions.length === 0) {
+    for (const m of altMarkers) {
+      const match = text.match(m.regex);
+      if (match) {
+        positions.push({ index: match.index, label: m.label, title: m.title });
+      }
+    }
+  }
+
+  // If still no markers found, return whole text
+  if (positions.length === 0) {
+    return [{ label: '', title: '', body: text }];
+  }
+
+  positions.sort((a, b) => a.index - b.index);
+
+  for (let i = 0; i < positions.length; i++) {
+    const start = positions[i].index;
+    const end = i + 1 < positions.length ? positions[i + 1].index : text.length;
+    let body = text.slice(start, end);
+    // Remove the heading line
+    body = body.replace(/^.*?\n/, '').trim();
+    sections.push({
+      label: positions[i].label,
+      title: positions[i].title,
+      body: body
+    });
+  }
+
+  return sections;
+}
+
+function formatBody(body) {
+  // Escape HTML
+  let html = body
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // Code blocks -> stats box
+  html = html.replace(/```([\s\S]*?)```/g, (_, content) => {
+    return `<div class="stats-box">${content.replace(/\n/g, '<br>')}</div>`;
+  });
+
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // Line breaks to paragraphs
+  const paras = html.split('\n\n');
+  return paras.filter(p => p.trim()).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+}
+
+// ── Helpers ─────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('error');
+  el.textContent = '⚠ ' + msg;
+  el.classList.add('show');
+}
+
+function hideError() {
+  document.getElementById('error').classList.remove('show');
+}
+
+// ── Copy prompt ─────────────────────────────────
+function copyPrompt() {
+  document.getElementById('promptContent').textContent = SYSTEM_PROMPT;
+  document.getElementById('promptModal').classList.add('show');
+}
+
+function closePromptModal() {
+  document.getElementById('promptModal').classList.remove('show');
+}
+
+function copyFullPrompt() {
+  navigator.clipboard.writeText(SYSTEM_PROMPT).then(() => {
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '✅ 已复制！';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  }).catch(() => {
+    // Fallback
+    const pre = document.getElementById('promptContent');
+    const range = document.createRange();
+    range.selectNode(pre);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  });
+}
+
+// Close modal on overlay click
+document.getElementById('promptModal').addEventListener('click', function(e) {
+  if (e.target === this) closePromptModal();
+});
+
+// Enter key submits (Ctrl+Enter)
+document.getElementById('dream').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    interpretDream();
+  }
+});
+
+// Save API key to localStorage
+document.getElementById('apiKey').addEventListener('change', function() {
+  try {
+    localStorage.setItem('dreamreader_api_key', this.value);
+    localStorage.setItem('dreamreader_provider', document.getElementById('provider').value);
+  } catch(e) {}
+});
+
+// Load saved
+(function() {
+  try {
+    const savedKey = localStorage.getItem('dreamreader_api_key');
+    const savedProv = localStorage.getItem('dreamreader_provider');
+    if (savedKey) document.getElementById('apiKey').value = savedKey;
+    if (savedProv) document.getElementById('provider').value = savedProv;
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
